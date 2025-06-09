@@ -1,0 +1,45 @@
+{
+  "name": "sewpro-waitlist-site",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "aos": "^2.3.4",
+    "axios": "^1.9.0",
+    "bootstrap": "^5.3.6",
+    "jquery": "^3.7.1",
+    "owl.carousel": "^2.3.4",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "react-owl-carousel": "^2.3.3",
+    "react-router-dom": "^7.6.0",
+    "react-slick": "^0.30.3",
+    "slick-carousel": "^1.8.1",
+    "sweetalert2": "^11.22.0",
+    "typed.js": "^2.1.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.25.0",
+    "@types/aos": "^3.0.7",
+    "@types/jquery": "^3.5.32",
+    "@types/owl.carousel": "^2.3.6",
+    "@types/react": "^19.1.2",
+    "@types/react-dom": "^19.1.2",
+    "@types/react-router-dom": "^5.3.3",
+    "@vitejs/plugin-react": "^4.4.1",
+    "eslint": "^9.25.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.19",
+    "globals": "^16.0.0",
+    "typescript": "~5.8.3",
+    "typescript-eslint": "^8.30.1",
+    "vite": "^6.3.5",
+    "vite-plugin-static-copy": "^3.0.0"
+  }
+}
