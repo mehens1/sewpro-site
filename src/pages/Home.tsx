@@ -3,8 +3,15 @@
 import { useEffect, useRef } from "react";
 import Typed from "typed.js";
 
+// Extend the Window interface to include fbq
+declare global {
+    interface Window {
+        fbq?: (...args: any[]) => void;
+    }
+}
+
 import OwlCarousel from 'react-owl-carousel';
-import { submitNewUser } from "../services/waitlistService";
+import { adsEventTrackerMetaApi, submitNewUser } from "../services/waitlistService";
 import { closeProcessing, showError, showProcessing } from "../utils/sweetAlert";
 import { handleApiError } from "../utils/apiErrorHandle";
 
@@ -30,31 +37,73 @@ export function BannerSlider() {
     );
 }
 
-async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     showProcessing("Please wait", "Adding you to the waitlist...");
-    const form = event.target as HTMLFormElement;
+
+    const form = event.currentTarget;
     const formData = new FormData(form);
-    const data = {
-        full_name: formData.get("fullName") as string,
-        email: formData.get("email") as string,
-        phone_number: formData.get("phone") as string,
-    };
+
+    const fullName = formData.get("fullName")?.toString().trim() || "";
+    const email = formData.get("email")?.toString().trim().toLowerCase() || "";
+    const phoneNumber = formData.get("phone")?.toString().trim() || "";
+
+    if (!fullName || !email || !phoneNumber) {
+        closeProcessing();
+        showError("Missing Fields", "Please fill in all required fields.");
+        return;
+    }
 
     try {
-        await submitNewUser(data);
-        showProcessing("Success", "🎉 You’ve joined the waitlist! We’ll keep you updated. Redirecting you to our Telegram community in a few seconds...");
+        await submitNewUser({ full_name: fullName, email, phone_number: phoneNumber });
+
+        // Hash email for privacy
+        let emailHash = "";
+        if (email) {
+            const encoder = new TextEncoder();
+            const hashBuffer = await window.crypto.subtle.digest("SHA-256", encoder.encode(email));
+            emailHash = Array.from(new Uint8Array(hashBuffer))
+                .map(b => b.toString(16).padStart(2, "0"))
+                .join("");
+        }
+
+        const eventId = `${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
+        window.fbq?.('track', 'Lead', {}, { eventID: eventId });
+
+        // Prevent duplicate submissions per day
+        const submissionKey = `waitlist_submitted_${email}`;
+        const today = new Date().toISOString().slice(0, 10);
+        const lastSubmission = localStorage.getItem(submissionKey);
+
+        if (lastSubmission !== today) {
+            await adsEventTrackerMetaApi({
+                data: [{
+                    event_id: eventId,
+                    event_name: "Lead",
+                    event_time: Math.floor(Date.now() / 1000),
+                    event_source_url: window.location.href,
+                    action_source: "website",
+                    user_data: { email: emailHash }
+                }]
+            });
+            localStorage.setItem(submissionKey, today);
+        }
+
+        showProcessing(
+            "Success",
+            "🎉 You’ve joined the waitlist! We’ll keep you updated. Redirecting you to our Telegram community in a few seconds..."
+        );
         form.reset();
 
         setTimeout(() => {
             window.open("https://t.me/sewpro_app", "_blank");
             closeProcessing();
-        }, 3000);
+        }, 2000);
     } catch (error) {
-        const apiError = handleApiError(error);
-        showError("Submission Failed", apiError.message);
+        closeProcessing();
+        showError("Submission Failed", handleApiError(error).message);
     }
-}
+};
 
 type WaitlistFormProps = {
     className?: string;
